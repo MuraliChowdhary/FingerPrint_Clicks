@@ -3,33 +3,55 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FingerprintJS Example</title>
+    <title>Capture Visitor ID</title>
     <script>
-        // Wait a couple of seconds before a result appears
+        // Wait for the page to load
         window.onload = function() {
-            // Initialize the agent at application startup.
-            // Get a public API key at https://dashboard.fingerprintjs.com
+            // Initialize FingerprintJS
             const fpPromise = import(`https://fpjscdn.net/v3/PaYRWkgvLTeq4rPN1YZL`)
-                .then(FingerprintJS => FingerprintJS.load({
-                    // region: 'eu', // Uncomment if using a specific region
-                    // endpoint: 'https://fp.your.com', // Uncomment to set a specific endpoint
-                }));
+                .then(FingerprintJS => FingerprintJS.load());
 
-            // Get the visitor identifier when you need it.
+            // Get the visitor identifier
             fpPromise
                 .then(fp => fp.get())
                 .then(result => {
                     const visitorId = result.visitorId;
                     console.log('Your visitorId:', visitorId);
-                    // You can also display it on the web page
-                    document.getElementById('visitorIdDisplay').innerText = visitorId;
+                    
+                    // Store visitorId in local storage
+                    localStorage.setItem('visitorId', visitorId);
+
+                    // Get the shortId from the URL query parameters
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const shortId = urlParams.get('shortId');
+
+                    // Send visitor ID to backend
+                    fetch('https://pickandpartner.onrender.com/store-visitor-id', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            visitorId: visitorId,
+                            shortId: shortId
+                        }),
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log('Visitor ID stored successfully:', data);
+
+                        // Redirect to the original URL
+                        window.location.href = data.originalUrl; // Assume your backend returns the original URL
+                    })
+                    .catch((error) => {
+                        console.error('Error storing visitor ID:', error);
+                    });
                 })
                 .catch(error => console.error(error));
         };
     </script>
 </head>
 <body>
-    <h1>FingerprintJS Visitor ID Example</h1>
-    <p>Your Visitor ID: <span id="visitorIdDisplay">Loading...</span></p>
+    <h1>Redirecting...</h1>
 </body>
 </html>
