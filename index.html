@@ -3,51 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Capture Visitor ID</title>
+    <title>Capture Visitor ID and Location</title>
     <script>
-        // Wait for the page to load
         window.onload = function() {
-            // Initialize FingerprintJS
             const fpPromise = import(`https://fpjscdn.net/v3/PaYRWkgvLTeq4rPN1YZL`)
                 .then(FingerprintJS => FingerprintJS.load());
 
-            // Get the visitor identifier
+            // Get visitor ID
             fpPromise
                 .then(fp => fp.get())
                 .then(result => {
                     const visitorId = result.visitorId;
-                    console.log('Your visitorId:', visitorId);
-                    
-                    // Store visitorId in local storage
                     localStorage.setItem('visitorId', visitorId);
 
-                    // Get the shortId from the URL query parameters
+                    // Get URL parameters
                     const urlParams = new URLSearchParams(window.location.search);
                     const shortId = urlParams.get('shortId');
 
-                    // Send visitor ID to backend
-                    fetch('https://pickandpartner.onrender.com/store-visitor-id', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            visitorId: visitorId,
-                            shortId: shortId
-                        }),
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        console.log('Visitor ID stored successfully:', data);
+                    // Fetch city location data from IP API
+                    fetch('https://ipapi.co/json/')
+                        .then(response => response.json())
+                        .then(locationData => {
+                            const city = locationData.city;
 
-                        // Redirect to the original URL
-                        window.location.href = data.originalUrl; // Assume your backend returns the original URL
-                    })
-                    .catch((error) => {
-                        console.error('Error storing visitor ID:', error);
-                    });
+                            // Send visitorId, shortId, and city to the backend
+                            fetch('https://pickandpartner.onrender.com/store-visitor-id', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ visitorId, shortId, city })
+                            })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.originalUrl) {
+                                    window.location.href = data.originalUrl;  // Redirect to the original URL
+                                } else {
+                                    console.error('Original URL not found in response');
+                                }
+                            })
+                            .catch(error => console.error('Error storing visitor ID and location:', error));
+                        })
+                        .catch(error => console.error('Error fetching location data:', error));
                 })
-                .catch(error => console.error(error));
+                .catch(error => console.error('Error loading FingerprintJS:', error));
         };
     </script>
 </head>
