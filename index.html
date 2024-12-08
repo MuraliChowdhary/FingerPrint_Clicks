@@ -4,6 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Capture Visitor ID and Location</title>
+    <style>
+        @keyframes fade-in {
+        from {
+        opacity: 0;
+        }
+        to {
+        opacity: 1;
+        }
+        }
+        </style>
     <script>
         window.onload = function() {
             const fpPromise = import(`https://fpjscdn.net/v3/ot4zQPPBhdcmFmDctFvO`)
@@ -49,6 +59,16 @@
     </script>
 </head>
 <body>
-    <h1>Redirecting...</h1>
+    <h1 style="font-family: 'Verdana', 'Geneva', 'Tahoma', sans-serif; 
+    font-weight: 400; 
+    text-align: center; 
+    color: #4A90E2; 
+    margin-top: 20%; 
+    animation: fade-in 2s ease-in-out;">
+Hold tight! We're taking you to your destination...
+</h1>
+
+
+
 </body>
 </html>
