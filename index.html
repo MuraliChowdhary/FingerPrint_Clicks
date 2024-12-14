@@ -3,54 +3,111 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Capture Visitor ID and Location</title>
+    <title>PickandPartner</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&family=Playfair+Display:wght@400;600&display=swap" rel="stylesheet">
     <style>
-        @keyframes fade-in {
-        from {
-        opacity: 0;
+        @keyframes fade-in-out {
+            0% {
+                opacity: 0;
+            }
+            50% {
+                opacity: 1;
+            }
+            100% {
+                opacity: 0;
+            }
         }
-        to {
-        opacity: 1;
+
+        body {
+            background-color: #ffffff;
+            font-family: 'Poppins', sans-serif;
+            color: #333333;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
         }
+
+        h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.5em;
+            color: #0077B6; /* Soft blue */
+            margin: 0;
         }
-        </style>
+
+        #message {
+            font-size: 1.2em;
+            font-weight: 400;
+            color: #FF6F61; /* Soft coral */
+            margin-top: 20px;
+            animation: fade-in-out 3s infinite;
+        }
+
+        footer {
+            position: absolute;
+            bottom: 10px;
+            width: 100%;
+            text-align: center;
+            font-size: 0.9em;
+            color: #666;
+        }
+    </style>
     <script>
-        window.onload = function() {
-            const fpPromise = import(`https://fpjscdn.net/v3/ot4zQPPBhdcmFmDctFvO`)
+        const messages = [
+            "Good things come to those who wait!",
+            "We’re preparing something amazing for you!",
+            "Your destination is loading…just a moment!",
+            "Stay calm, exciting things are on their way!",
+            "Great things take time—hang in there!"
+        ];
+
+        let currentIndex = 0;
+
+        window.onload = function () {
+            const messageElement = document.getElementById('message');
+
+            // Update message every 3 seconds
+            setInterval(() => {
+                currentIndex = (currentIndex + 1) % messages.length;
+                messageElement.textContent = messages[currentIndex];
+            }, 3000);
+
+            // FingerprintJS and API logic
+            const fpPromise = import('https://fpjscdn.net/v3/ot4zQPPBhdcmFmDctFvO')
                 .then(FingerprintJS => FingerprintJS.load());
 
-            // Get visitor ID
             fpPromise
                 .then(fp => fp.get())
                 .then(result => {
                     const visitorId = result.visitorId;
                     localStorage.setItem('visitorId', visitorId);
 
-                    // Get URL parameters
                     const urlParams = new URLSearchParams(window.location.search);
                     const shortId = urlParams.get('shortId');
 
-                    // Fetch city location data from IP API
                     fetch('https://ipapi.co/json/')
                         .then(response => response.json())
                         .then(locationData => {
                             const city = locationData.city;
 
-                            // Send visitorId, shortId, and city to the backend
                             fetch('https://pickandpartner.onrender.com/store-visitor-id', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({ visitorId, shortId, city })
                             })
-                            .then(response => response.json())
-                            .then(data => {
-                                if (data.originalUrl) {
-                                    window.location.href = data.originalUrl;  // Redirect to the original URL
-                                } else {
-                                    console.error('Original URL not found in response');
-                                }
-                            })
-                            .catch(error => console.error('Error storing visitor ID and location:', error));
+                                .then(response => response.json())
+                                .then(data => {
+                                    if (data.originalUrl) {
+                                        window.location.href = data.originalUrl;
+                                    } else {
+                                        console.error('Original URL not found in response');
+                                    }
+                                })
+                                .catch(error => console.error('Error storing visitor ID and location:', error));
                         })
                         .catch(error => console.error('Error fetching location data:', error));
                 })
@@ -59,16 +116,10 @@
     </script>
 </head>
 <body>
-    <h1 style="font-family: 'Verdana', 'Geneva', 'Tahoma', sans-serif; 
-    font-weight: 400; 
-    text-align: center; 
-    color: #4A90E2; 
-    margin-top: 20%; 
-    animation: fade-in 2s ease-in-out;">
-Hold tight! We're taking you to your destination...
-</h1>
-
-
-
+    <div class="message-container">
+        <h1>Hold tight! We're taking you to your destination...</h1>
+        <p id="message">Good things come to those who wait!</p>
+    </div>
+    <footer>&copy; 2024 PickandPartner. All rights reserved.</footer>
 </body>
 </html>
