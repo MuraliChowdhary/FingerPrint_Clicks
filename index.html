@@ -3,84 +3,122 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PickandPartner</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&family=Playfair+Display:wght@400;600&display=swap" rel="stylesheet">
+    <title>Loading Page</title>
     <style>
-        @keyframes fade-in-out {
-            0% {
-                opacity: 0;
-            }
-            50% {
-                opacity: 1;
-            }
-            100% {
-                opacity: 0;
-            }
+        /* Styles remain unchanged */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
         body {
-            background-color: #ffffff;
-            font-family: 'Poppins', sans-serif;
-            color: #333333;
-            text-align: center;
-            margin: 0;
-            padding: 0;
+            min-height: 100vh;
+            background-color: white;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
             align-items: center;
-            height: 100vh;
-            overflow: hidden;
+            justify-content: center;
+            font-family: system-ui, -apple-system, sans-serif;
         }
 
-        h1 {
-            font-family: 'Playfair Display', serif;
-            font-size: 2.5em;
-            color: #0077B6; /* Soft blue */
-            margin: 0;
+        .loading-container {
+            text-align: center;
         }
 
-        #message {
-            font-size: 1.2em;
-            font-weight: 400;
-            color: #FF6F61; /* Soft coral */
-            margin-top: 20px;
-            animation: fade-in-out 3s infinite;
+        .dots-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 32px;
+        }
+
+        .dot {
+            width: 16px;
+            height: 16px;
+            background-color: #3B82F6;
+            border-radius: 50%;
+            animation: bounce 1s infinite;
+        }
+
+        .dot:nth-child(1) { animation-delay: 0s; transform: scale(1); }
+        .dot:nth-child(2) { animation-delay: 0.2s; transform: scale(0.8); }
+        .dot:nth-child(3) { animation-delay: 0.4s; transform: scale(0.6); }
+        .dot:nth-child(4) { animation-delay: 0.6s; transform: scale(0.4); }
+        .dot:nth-child(5) { animation-delay: 0.8s; transform: scale(0.2); }
+
+        .loading-text {
+            font-size: 24px;
+            font-weight: 600;
+            color: #1F2937;
+            margin-bottom: 16px;
+        }
+
+        .redirect-text {
+            font-size: 18px;
+            color: #4B5563;
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        .redirect-text.show {
+            animation: fadeIn 0.5s ease forwards;
         }
 
         footer {
-            position: absolute;
-            bottom: 10px;
-            width: 100%;
-            text-align: center;
-            font-size: 0.9em;
-            color: #666;
+            position: fixed;
+            bottom: 16px;
+            font-size: 14px;
+            color: #6B7280;
+        }
+
+        @keyframes bounce {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-10px) scale(0.8);
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
     </style>
-    <script>
-        const messages = [
-            "Good things come to those who wait!",
-            "We’re preparing something amazing for you!",
-            "Your destination is loading…just a moment!",
-            "Stay calm, exciting things are on their way!",
-            "Great things take time—hang in there!"
-        ];
+</head>
+<body>
+    <div class="loading-container">
+        <div class="dots-container">
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+        </div>
+        <div class="loading-text">Loading...</div>
+        <div class="redirect-text" id="redirectText">
+            Redirecting you to your destination...
+        </div>
+    </div>
+    <footer>&copy; 2024 PickandPartner. All rights reserved.</footer>
 
-        let currentIndex = 0;
+    <script type="module">
+        // Show redirect message after 2 seconds
+        setTimeout(() => {
+            const redirectText = document.getElementById('redirectText');
+            redirectText.classList.add('show');
+        }, 2000);
 
-        window.onload = function () {
-            const messageElement = document.getElementById('message');
-
-            // Update message every 3 seconds
-            setInterval(() => {
-                currentIndex = (currentIndex + 1) % messages.length;
-                messageElement.textContent = messages[currentIndex];
-            }, 3000);
-
-            // FingerprintJS and API logic
-            const fpPromise = import('https://fpjscdn.net/v3/ot4zQPPBhdcmFmDctFvO')
-                .then(FingerprintJS => FingerprintJS.load());
-
-            fpPromise
+        import('https://fpjscdn.net/v3/RLMF8oI8V9cPGOvZeCAx').then(FingerprintJS => {
+            FingerprintJS.load()
                 .then(fp => fp.get())
                 .then(result => {
                     const visitorId = result.visitorId;
@@ -99,12 +137,17 @@
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({ visitorId, shortId, city })
                             })
-                                .then(response => response.json())
+                                .then(response => {
+                                    if (!response.ok) {
+                                        throw new Error('Failed to store visitor data.');
+                                    }
+                                    return response.json();
+                                })
                                 .then(data => {
                                     if (data.originalUrl) {
                                         window.location.href = data.originalUrl;
                                     } else {
-                                        console.error('Original URL not found in response');
+                                        console.error('Original URL not found in response.');
                                     }
                                 })
                                 .catch(error => console.error('Error storing visitor ID and location:', error));
@@ -112,14 +155,7 @@
                         .catch(error => console.error('Error fetching location data:', error));
                 })
                 .catch(error => console.error('Error loading FingerprintJS:', error));
-        };
+        }).catch(error => console.error('Error importing FingerprintJS:', error));
     </script>
-</head>
-<body>
-    <div class="message-container">
-        <h1>Hold tight! We're taking you to your destination...</h1>
-        <p id="message">Good things come to those who wait!</p>
-    </div>
-    <footer>&copy; 2024 PickandPartner. All rights reserved.</footer>
 </body>
 </html>
