@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Loading Page</title>
     <style>
-      /* Styles remain unchanged */
       * {
         margin: 0;
         padding: 0;
@@ -44,23 +43,22 @@
 
       .dot:nth-child(1) {
         animation-delay: 0s;
-        transform: scale(1);
       }
+
       .dot:nth-child(2) {
         animation-delay: 0.2s;
-        transform: scale(0.8);
       }
+
       .dot:nth-child(3) {
         animation-delay: 0.4s;
-        transform: scale(0.6);
       }
+
       .dot:nth-child(4) {
         animation-delay: 0.6s;
-        transform: scale(0.4);
       }
+
       .dot:nth-child(5) {
         animation-delay: 0.8s;
-        transform: scale(0.2);
       }
 
       .loading-text {
@@ -94,7 +92,7 @@
           transform: translateY(0);
         }
         50% {
-          transform: translateY(-10px) scale(0.8);
+          transform: translateY(-10px);
         }
       }
 
@@ -124,73 +122,72 @@
         Redirecting you to your destination...
       </div>
     </div>
+
     <footer>&copy; 2024 PickandPartner. All rights reserved.</footer>
 
-    <script type="module">
-      // Show redirect message after 2 seconds
+    <!-- <script type="module">
+
+      // Show the redirect message after 2 seconds
       setTimeout(() => {
-        const redirectText = document.getElementById("redirectText");
-        redirectText.classList.add("show");
+        document.getElementById("redirectText").classList.add("show");
       }, 2000);
 
-      import("https://fpjscdn.net/v3/DgyR9oVMwDbxfgXVYT9p")
-        .then((FingerprintJS) => {
-          FingerprintJS.load()
-            .then((fp) => fp.get())
-            .then((result) => {
-              const visitorId = result.visitorId;
-              localStorage.setItem("visitorId", visitorId);
+      // Load FingerprintJS
+      import("https://fpjscdn.net/v3/ulCTK6CIrBKtYLRBcEp8")
+        .then(FingerprintJS => FingerprintJS.load())
+        .then(fp => fp.get())
+        .then(result => {
+          const visitorId = result.visitorId;
+          localStorage.setItem("visitorId", visitorId);
 
-              console.log(visitorId)
+          const urlParams = new URLSearchParams(window.location.search);
+          const shortId = urlParams.get("shortId");
 
-              const urlParams = new URLSearchParams(window.location.search);
-              const shortId = urlParams.get("shortId");
-              console.log(visitorId);
-              fetch("https://ipapi.co/json/")
-                .then((response) => response.json())
-                .then((locationData) => {
-                  const city = locationData.city;
-                  console.log(city);
+          return fetch("https://ipapi.co/json/")
+            .then(response => response.json())
+            .then(locationData => {
+              const city = locationData.city || "Unknown";
 
-                  fetch(
-                    "https://pickandpartner-8nes.onrender.com/store-visitor-id",
-                    {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ visitorId, shortId, city }),
-                    }
-                  )
-                    .then((response) => {
-                      if (!response.ok) {
-                        throw new Error("Failed to store visitor data.");
-                      }
-                      return response.json();
-                    })
-                    .then((data) => {
-                      if (data.originalUrl) {
-                        window.location.href = data.originalUrl;
-                      } else {
-                        console.error("Original URL not found in response.");
-                      }
-                    })
-                    .catch((error) =>
-                      console.error(
-                        "Error storing visitor ID and location:",
-                        error
-                      )
-                    );
-                })
-                .catch((error) =>
-                  console.error("Error fetching location data:", error)
-                );
-            })
-            .catch((error) =>
-              console.error("Error loading FingerprintJS:", error)
-            );
+              return fetch("https://utmtracking.muralisudireddy0.workers.dev/store-visitor-id", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ visitorId, shortId, city }),
+              });
+            });
         })
-        .catch((error) =>
-          console.error("Error importing FingerprintJS:", error)
-        );
+        .then(response => {
+          if (!response.ok) {
+            throw new Error("Failed to store visitor data.");
+          }
+          return response.json();
+        })
+        .then(data => {
+          if (data.originalUrl) {
+            window.location.href = data.originalUrl;
+          } else {
+            console.error("Original URL not found in response.");
+          }
+        })
+        .catch(error => {
+          console.error("Redirection or tracking error:", error);
+        });
+    </script> -->
+    <script>
+      // Initialize the agent on page load.
+      const fpPromise = import('https://fpjscdn.net/v3/ulCTK6CIrBKtYLRBcEp8')
+        .then(FingerprintJS => FingerprintJS.load({
+          region: "ap"
+        }))
+    
+      // Get the visitorId when you need it.
+      fpPromise
+        .then(fp => fp.get())
+        .then(result => {
+          const visitorId = result.visitorId
+          console.log(visitorId)
+        })
     </script>
   </body>
 </html>
