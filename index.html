@@ -1,177 +1,71 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Loading Page</title>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Redirecting...</title>
     <style>
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-      }
-
-      body {
-        min-height: 100vh;
-        background-color: white;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        font-family: system-ui, -apple-system, sans-serif;
-      }
-
-      .loading-container {
-        text-align: center;
-      }
-
-      .dots-container {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        margin-bottom: 32px;
-      }
-
-      .dot {
-        width: 16px;
-        height: 16px;
-        background-color: #3b82f6;
-        border-radius: 50%;
-        animation: bounce 1s infinite;
-      }
-
-      .dot:nth-child(1) {
-        animation-delay: 0s;
-      }
-
-      .dot:nth-child(2) {
-        animation-delay: 0.2s;
-      }
-
-      .dot:nth-child(3) {
-        animation-delay: 0.4s;
-      }
-
-      .dot:nth-child(4) {
-        animation-delay: 0.6s;
-      }
-
-      .dot:nth-child(5) {
-        animation-delay: 0.8s;
-      }
-
-      .loading-text {
-        font-size: 24px;
-        font-weight: 600;
-        color: #1f2937;
-        margin-bottom: 16px;
-      }
-
-      .redirect-text {
-        font-size: 18px;
-        color: #4b5563;
-        opacity: 0;
-        transform: translateY(10px);
-      }
-
-      .redirect-text.show {
-        animation: fadeIn 0.5s ease forwards;
-      }
-
-      footer {
-        position: fixed;
-        bottom: 16px;
-        font-size: 14px;
-        color: #6b7280;
-      }
-
-      @keyframes bounce {
-        0%,
-        100% {
-          transform: translateY(0);
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            margin: 0;
+            padding: 20px;
+            color: #333;
         }
-        50% {
-          transform: translateY(-10px);
+        .status {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            font-size: 14px;
+            color: #666;
         }
-      }
-
-      @keyframes fadeIn {
-        from {
-          opacity: 0;
-          transform: translateY(10px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      }
     </style>
-  </head>
-  <body>
-    <div class="loading-container">
-      <div class="dots-container">
-        <div class="dot"></div>
-        <div class="dot"></div>
-        <div class="dot"></div>
-        <div class="dot"></div>
-        <div class="dot"></div>
-      </div>
-      <div class="loading-text">Loading...</div>
-      <div class="redirect-text" id="redirectText">
-        Redirecting you to your destination...
-      </div>
-    </div>
-
-    <footer>&copy; 2024 PickandPartner. All rights reserved.</footer>
+</head>
+<body>
+    <div class="status" id="status">Processing your request...</div>
 
     <script type="module">
-      // Show the redirect message after 2 seconds
-      setTimeout(() => {
-        document.getElementById("redirectText").classList.add("show");
-      }, 2000);
+        // Minimal status updates
+        const statusEl = document.getElementById('status');
+        
+        statusEl.textContent = "Collecting analytics data...";
+        
+        try {
+            // Load FingerprintJS
+            const FingerprintJS = await import("https://fpjscdn.net/v3/ulCTK6CIrBKtYLRBcEp8");
+            const fp = await FingerprintJS.load();
+            const result = await fp.get();
+            const visitorId = result.visitorId;
+            localStorage.setItem("visitorId", visitorId);
 
-      // Load FingerprintJS
-      import("https://fpjscdn.net/v3/ulCTK6CIrBKtYLRBcEp8")
-        .then(FingerprintJS => FingerprintJS.load())
-        .then(fp => fp.get())
-        .then(result => {
-          const visitorId = result.visitorId;
-          localStorage.setItem("visitorId", visitorId);
+            const urlParams = new URLSearchParams(window.location.search);
+            const shortId = urlParams.get("shortId");
 
-          const urlParams = new URLSearchParams(window.location.search);
-          const shortId = urlParams.get("shortId");
+            statusEl.textContent = "Detecting your location...";
+            const locationResponse = await fetch("https://ipapi.co/json/");
+            const locationData = await locationResponse.json();
+            const city = locationData.city || "Unknown";
 
-          return fetch("https://ipapi.co/json/")
-            .then(response => response.json())
-            .then(locationData => {
-              const city = locationData.city || "Unknown";
-
-              return fetch("https://utmtracking.muralisudireddy0.workers.dev/store-visitor-id", {
+            statusEl.textContent = "Finalizing redirection...";
+            const response = await fetch("https://utmtracking.muralisudireddy0.workers.dev/store-visitor-id", {
                 method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                },
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ visitorId, shortId, city }),
-              });
             });
-        })
-        .then(response => {
-          if (!response.ok) {
-            throw new Error("Failed to store visitor data.");
-          }
-          return response.json();
-        })
-        .then(data => {
-          if (data.originalUrl) {
-            window.location.href = data.originalUrl;
-          } else {
-            console.error("Original URL not found in response.");
-          }
-        })
-        .catch(error => {
-          console.error("Redirection or tracking error:", error);
-        });
+
+            if (!response.ok) throw new Error("Failed to store visitor data");
+            
+            const data = await response.json();
+            if (data.originalUrl) {
+                window.location.href = data.originalUrl;
+            } else {
+                statusEl.textContent = "Redirection failed - missing URL";
+                throw new Error("Original URL not found in response");
+            }
+        } catch (error) {
+            console.error("Tracking error:", error);
+            statusEl.textContent = "Redirection failed. Please try the link again.";
+            statusEl.style.color = "#d32f2f"; 
+        }
     </script>
-  </body>
+</body>
 </html>
