@@ -125,8 +125,7 @@
 
     <footer>&copy; 2024 PickandPartner. All rights reserved.</footer>
 
-    <!-- <script type="module">
-
+    <script type="module">
       // Show the redirect message after 2 seconds
       setTimeout(() => {
         document.getElementById("redirectText").classList.add("show");
@@ -173,21 +172,6 @@
         .catch(error => {
           console.error("Redirection or tracking error:", error);
         });
-    </script> -->
-    <script>
-      // Initialize the agent on page load.
-      const fpPromise = import('https://fpjscdn.net/v3/ulCTK6CIrBKtYLRBcEp8')
-        .then(FingerprintJS => FingerprintJS.load({
-          region: "ap"
-        }))
-    
-      // Get the visitorId when you need it.
-      fpPromise
-        .then(fp => fp.get())
-        .then(result => {
-          const visitorId = result.visitorId
-          console.log(visitorId)
-        })
     </script>
   </body>
 </html>
