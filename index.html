@@ -33,12 +33,11 @@
       const urlParams = new URLSearchParams(window.location.search);
       const shortId = urlParams.get("shortId");
 
-      // Get city/location
+      
       const locationResponse = await fetch("https://ipapi.co/json/");
       const locationData = await locationResponse.json();
       const city = locationData.city || "Unknown";
 
-      // Store visitor ID
       const storeVisitorRes = await fetch("https://utmtracking.muralisudireddy0.workers.dev/store-visitor-id", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -49,9 +48,8 @@
       const data = await storeVisitorRes.json();
       if (!data.originalUrl) throw new Error("Original URL not found");
 
-      // ✅ Optional: Trigger conversion tracking (delayed or immediate)
-      const eventName = "page_view"; // or "visit", "clicked", etc.
-
+     
+      const eventName = "page_view";  
       await fetch("https://utmtracking.muralisudireddy0.workers.dev//track-conversion", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
