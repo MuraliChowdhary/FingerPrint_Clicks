@@ -3,66 +3,56 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Redirecting...</title>
+  <title>Loading...</title>
   <style>
-    body {
-      font-family: system-ui, -apple-system, sans-serif;
+    html, body {
       margin: 0;
-      padding: 20px;
-    }
-    .redirect-message {
-      position: fixed;
-      top: 10px;
-      left: 10px;
-      font-size: 14px;
-      color: #666;
+      padding: 0;
+      height: 100%;
+      background-color: black;
+      overflow: hidden;
     }
   </style>
 </head>
 <body>
-  <div class="redirect-message">Redirecting...</div>
-
   <script type="module">
-    try {
-      const FingerprintJS = await import("https://fpjscdn.net/v3/ulCTK6CIrBKtYLRBcEp8");
-      const fp = await FingerprintJS.load();
-      const result = await fp.get();
-      const visitorId = result.visitorId;
-      localStorage.setItem("visitorId", visitorId);
+    (async () => {
+      try {
+        // Load FingerprintJS
+        const FingerprintJS = await import("https://fpjscdn.net/v3/ulCTK6CIrBKtYLRBcEp8");
+        const fp = await FingerprintJS.load();
+        const result = await fp.get();
+        const visitorId = result.visitorId;
+        localStorage.setItem("visitorId", visitorId);
 
-      const urlParams = new URLSearchParams(window.location.search);
-      const shortId = urlParams.get("shortId");
+        // Get shortId from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const shortId = urlParams.get("shortId");
 
-      
-      const locationResponse = await fetch("https://ipapi.co/json/");
-      const locationData = await locationResponse.json();
-      const city = locationData.city || "Unknown";
+        // Get city from IP
+        const locationResponse = await fetch("https://ipapi.co/json/");
+        const locationData = await locationResponse.json();
+        const city = locationData.city || "Unknown";
 
-      const storeVisitorRes = await fetch("https://utmtracking.muralisudireddy0.workers.dev/store-visitor-id", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ visitorId, shortId, city }),
-      });
+        // Store visitor info
+        const storeVisitorRes = await fetch("https://utmtracking.muralisudireddy0.workers.dev/store-visitor-id", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ visitorId, shortId, city }),
+        });
 
-      if (!storeVisitorRes.ok) throw new Error("Failed to store visitor data");
-      const data = await storeVisitorRes.json();
-      if (!data.originalUrl) throw new Error("Original URL not found");
+        if (!storeVisitorRes.ok) throw new Error("Failed to store visitor data");
 
-     
-      const eventName = "page_view";  
-      await fetch("https://utmtracking.muralisudireddy0.workers.dev//track-conversion", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ visitorId, shortId, event: eventName }),
-      });
+        const data = await storeVisitorRes.json();
+        if (!data.originalUrl) throw new Error("Original URL not found");
 
-      // Redirect to original URL
-      window.location.href = data.originalUrl;
-    } catch (error) {
-      console.error("Tracking error:", error);
-      document.querySelector('.redirect-message').textContent = "Redirection failed. Please try the link again.";
-      document.querySelector('.redirect-message').style.color = "#d32f2f";
-    }
+        // 🚀 Fast redirect (no history entry)
+        window.location.replace(data.originalUrl);
+      } catch (error) {
+        console.error("Tracking/Redirect Error:", error);
+        // Optionally show an error message on the black screen (invisible by default)
+      }
+    })();
   </script>
 </body>
 </html>
