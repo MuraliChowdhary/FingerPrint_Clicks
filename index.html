@@ -2,57 +2,45 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Loading...</title>
-  <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-      background-color: black;
-      overflow: hidden;
-    }
-  </style>
-</head>
-<body>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Redirecting...</title>
   <script type="module">
     (async () => {
       try {
-        // Load FingerprintJS
+        // Import FingerprintJS dynamically
         const FingerprintJS = await import("https://fpjscdn.net/v3/ulCTK6CIrBKtYLRBcEp8");
         const fp = await FingerprintJS.load();
         const result = await fp.get();
         const visitorId = result.visitorId;
+
+        // Store in localStorage for later use
         localStorage.setItem("visitorId", visitorId);
 
-        // Get shortId from URL
-        const urlParams = new URLSearchParams(window.location.search);
-        const shortId = urlParams.get("shortId");
+        // Extract shortId from query param
+        const shortId = new URLSearchParams(location.search).get("shortId");
 
-        // Get city from IP
-        const locationResponse = await fetch("https://ipapi.co/json/");
-        const locationData = await locationResponse.json();
+        // Fetch IP-based location (city)
+        const locationRes = await fetch("https://ipapi.co/json/");
+        const locationData = await locationRes.json();
         const city = locationData.city || "Unknown";
 
-        // Store visitor info
-        const storeVisitorRes = await fetch("https://my-app.muralisudireddy0.workers.dev/store-visitor-id", {
+        // Send tracking data to backend
+        const response = await fetch("https://my-app.muralisudireddy0.workers.dev/store-visitor-id", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ visitorId, shortId, city }),
         });
 
-        if (!storeVisitorRes.ok) throw new Error("Failed to store visitor data");
+        const data = await response.json();
+        if (!data.originalUrl) throw new Error("Missing redirect URL");
 
-        const data = await storeVisitorRes.json();
-        if (!data.originalUrl) throw new Error("Original URL not found");
-
-        // 🚀 Fast redirect (no history entry)
-        window.location.replace(data.originalUrl);
-      } catch (error) {
-        console.error("Tracking/Redirect Error:", error);
-        // Optionally show an error message on the black screen (invisible by default)
+        // 🚀 Redirect with no history
+        location.replace(data.originalUrl);
+      } catch (err) {
+        console.error("Redirect Error:", err);
       }
     })();
   </script>
-</body>
+</head>
+<body></body>
 </html>
