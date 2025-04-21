@@ -35,7 +35,7 @@
         const city = locationData.city || "Unknown";
 
         // Store visitor info
-        const storeVisitorRes = await fetch("https://utmtracking.muralisudireddy0.workers.dev/store-visitor-id", {
+        const storeVisitorRes = await fetch("https://my-app.muralisudireddy0.workers.dev/store-visitor-id", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ visitorId, shortId, city }),
