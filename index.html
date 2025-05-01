@@ -1,89 +1,197 @@
 
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Redirecting to ${domain}</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Loading Page</title>
+    <style>
+      /* Styles remain unchanged */
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
 
-</head>
-<body>
-  
+      body {
+        min-height: 100vh;
+        background-color: white;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        font-family: system-ui, -apple-system, sans-serif;
+      }
 
-  <script>
-    // Store the destination and tracking ID
-    const urlParams = new URLSearchParams(window.location.search);
-const destination = urlParams.get("originalUrl");
-const trackingId = urlParams.get("trackingId");
-    
-    // Comprehensive tracking function that runs immediately
-    function trackAndRedirect() {
-      // Track with first-party methods
-      const visitorData = {
-        shortId: trackingId,
-        timestamp: new Date().toISOString(),
-        cookieAvailable: navigator.cookieEnabled,
-        localStorageAvailable: !!window.localStorage,
-        screenSize: `${screen.width}x${screen.height}`,
-        language: navigator.language,
-        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        // Device fingerprinting elements
-        userAgent: navigator.userAgent,
-        platform: navigator.platform,
-        colorDepth: screen.colorDepth,
-        browserPluginsLength: navigator.plugins ? navigator.plugins.length : 0
-      };
-      
-      // Check for existing cookie and localStorage
-      let isReturningVisitor = false;
-      
-      // First check localStorage as it's more reliable in most browsers
-      if (window.localStorage && localStorage.getItem(`visited_${trackingId}`)) {
-        isReturningVisitor = true;
+      .loading-container {
+        text-align: center;
       }
-      
-      // Also check cookies as fallback
-      const cookieName = `visited_${trackingId}`;
-      if (document.cookie.split(';').some(item => item.trim().startsWith(`${cookieName}=`))) {
-        isReturningVisitor = true;
+
+      .dots-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        margin-bottom: 32px;
       }
-      
-      // Update visitor data with returning status
-      visitorData.isReturningVisitor = isReturningVisitor;
-      
-      // Set identification markers for future visits
-      // Use both methods for better cross-browser reliability
-      
-      // Set localStorage (more reliable in modern browsers)
-      if (window.localStorage) {
-        localStorage.setItem(`visited_${trackingId}`, 'true');
+
+      .dot {
+        width: 16px;
+        height: 16px;
+        background-color: #3b82f6;
+        border-radius: 50%;
+        animation: bounce 1s infinite;
       }
-      
-      // Set cookie (works across same-domain pages)
-      const expiryDate = new Date();
-      expiryDate.setFullYear(expiryDate.getFullYear() + 1); // 1 year expiry
-      document.cookie = `${cookieName}=true; expires=${expiryDate.toUTCString()}; path=/; SameSite=Lax`;
-      
-      // Report to server
-      fetch('htpps://my-app.muralisudireddy0.worker.dev/api/track-click', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(visitorData)
-      })
-      .then(() => {
-        // Redirect to destination with tracking ID
-        const url = new URL(destination);
-        url.searchParams.append('utm_tracking_id', trackingId);
-        window.location.href = url.toString();
-      })
-      .catch(() => {
-        // If tracking fails, still redirect
-        window.location.href = destination;
-      });
-    }
-    
-    // Execute tracking and redirect after a short delay
-    setTimeout(trackAndRedirect, 1500);
-  </script>
-</body>
+
+      .dot:nth-child(1) {
+        animation-delay: 0s;
+        transform: scale(1);
+      }
+      .dot:nth-child(2) {
+        animation-delay: 0.2s;
+        transform: scale(0.8);
+      }
+      .dot:nth-child(3) {
+        animation-delay: 0.4s;
+        transform: scale(0.6);
+      }
+      .dot:nth-child(4) {
+        animation-delay: 0.6s;
+        transform: scale(0.4);
+      }
+      .dot:nth-child(5) {
+        animation-delay: 0.8s;
+        transform: scale(0.2);
+      }
+
+      .loading-text {
+        font-size: 24px;
+        font-weight: 600;
+        color: #1f2937;
+        margin-bottom: 16px;
+      }
+
+      .redirect-text {
+        font-size: 18px;
+        color: #4b5563;
+        opacity: 0;
+        transform: translateY(10px);
+      }
+
+      .redirect-text.show {
+        animation: fadeIn 0.5s ease forwards;
+      }
+
+      footer {
+        position: fixed;
+        bottom: 16px;
+        font-size: 14px;
+        color: #6b7280;
+      }
+
+      @keyframes bounce {
+        0%,
+        100% {
+          transform: translateY(0);
+        }
+        50% {
+          transform: translateY(-10px) scale(0.8);
+        }
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="loading-container">
+      <div class="dots-container">
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+      </div>
+      <div class="loading-text">Loading...</div>
+      <div class="redirect-text" id="redirectText">
+        Redirecting you to your destination...
+      </div>
+    </div>
+    <footer>&copy; 2024 PickandPartner. All rights reserved.</footer>
+
+    <script type="module">
+      // Show redirect message after 2 seconds
+      setTimeout(() => {
+        const redirectText = document.getElementById("redirectText");
+        redirectText.classList.add("show");
+      }, 2000);
+
+      import("https://fpjscdn.net/v3/DgyR9oVMwDbxfgXVYT9p")
+        .then((FingerprintJS) => {
+          FingerprintJS.load()
+            .then((fp) => fp.get())
+            .then((result) => {
+              const visitorId = result.visitorId;
+              localStorage.setItem("visitorId", visitorId);
+
+              console.log(visitorId)
+
+              const urlParams = new URLSearchParams(window.location.search);
+              const shortId = urlParams.get("shortId");
+              console.log(visitorId);
+              fetch("https://ipapi.co/json/")
+                .then((response) => response.json())
+                .then((locationData) => {
+                  const city = locationData.city;
+                  console.log(city);
+
+                  fetch(
+                    "https://pickandpartner-94sz.onrender.com/store-visitor-id",
+                    {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ visitorId, shortId, city }),
+                    }
+                  )
+                    .then((response) => {
+                      if (!response.ok) {
+                        throw new Error("Failed to store visitor data.");
+                      }
+                      return response.json();
+                    })
+                    .then((data) => {
+                      if (data.originalUrl) {
+                        window.location.href = data.originalUrl;
+                      } else {
+                        console.error("Original URL not found in response.");
+                      }
+                    })
+                    .catch((error) =>
+                      console.error(
+                        "Error storing visitor ID and location:",
+                        error
+                      )
+                    );
+                })
+                .catch((error) =>
+                  console.error("Error fetching location data:", error)
+                );
+            })
+            .catch((error) =>
+              console.error("Error loading FingerprintJS:", error)
+            );
+        })
+        .catch((error) =>
+          console.error("Error importing FingerprintJS:", error)
+        );
+    </script>
+  </body>
 </html>
