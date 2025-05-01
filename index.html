@@ -1,77 +1,143 @@
-
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Loading Page</title>
-  </head>
-  <body>
-    <script type="module">
-      // Show redirect message after 2 seconds
-      setTimeout(() => {
-        const redirectText = document.getElementById("redirectText");
-        redirectText.classList.add("show");
-      }, 2000);
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Loading Page</title>
+</head>
+<body>
+ 
+  
+  <script>
+    // Extract parameters from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const shortId = urlParams.get("shortId");
+    
+    // Extract originalUrl directly from query parameters if present
+    let originalUrl = urlParams.get("originalUrl") || "";
+    
+    // Maximum wait time before redirection (milliseconds)
+    const MAX_REDIRECT_WAIT = 2000;
+    
+    // Immediate fallback timer - ensures redirection happens even if everything fails
+    const immediateFallbackTimer = setTimeout(() => {
+      if (originalUrl) {
+        window.location.href = originalUrl;
+      }
+    }, MAX_REDIRECT_WAIT);
 
-      import("https://fpjscdn.net/v3/eGhj85oLHfdY0b0SHhzC")
-        .then((FingerprintJS) => {
-          FingerprintJS.load()
-            .then((fp) => fp.get())
-            .then((result) => {
-              const visitorId = result.visitorId;
-              localStorage.setItem("visitorId", visitorId);
-
-              console.log(visitorId)
-
-              const urlParams = new URLSearchParams(window.location.search);
-              const shortId = urlParams.get("shortId");
-              console.log(visitorId);
-              fetch("https://ipapi.co/json/")
-                .then((response) => response.json())
-                .then((locationData) => {
-                  const city = locationData.city;
-                  console.log(city);
-
-                  fetch(
-                    "https://pickandpartner-94sz.onrender.com/store-visitor-id",
-                    {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ visitorId, shortId, city }),
-                    }
-                  )
-                    .then((response) => {
-                      if (!response.ok) {
-                        throw new Error("Failed to store visitor data.");
-                      }
-                      return response.json();
-                    })
-                    .then((data) => {
-                      if (data.originalUrl) {
-                        window.location.href = data.originalUrl;
-                      } else {
-                        console.error("Original URL not found in response.");
-                      }
-                    })
-                    .catch((error) =>
-                      console.error(
-                        "Error storing visitor ID and location:",
-                        error
-                      )
-                    );
-                })
-                .catch((error) =>
-                  console.error("Error fetching location data:", error)
-                );
-            })
-            .catch((error) =>
-              console.error("Error loading FingerprintJS:", error)
+    // Main tracking function
+    async function trackAndRedirect() {
+      try {
+        // Only fetch originalUrl if not available from params and we have shortId
+        if (!originalUrl && shortId) {
+          try {
+            const urlResponse = await fetch(
+              `https://pickandpartner-94sz.onrender.com/get-original-url?shortId=${shortId}`,
+              { 
+                method: "GET",
+                // Add timeout to the fetch request
+                signal: AbortSignal.timeout(1500)
+              }
             );
-        })
-        .catch((error) =>
-          console.error("Error importing FingerprintJS:", error)
-        );
-    </script>
-  </body>
+            
+            if (urlResponse.ok) {
+              const urlData = await urlResponse.json();
+              originalUrl = urlData.originalUrl;
+            }
+          } catch (urlError) {
+            console.log("Could not fetch original URL:", urlError);
+          }
+        }
+
+        // If we have the originalUrl, we can already redirect
+        if (originalUrl) {
+          // Clear the timeout
+          clearTimeout(immediateFallbackTimer);
+          // Redirect now
+          window.location.href = originalUrl;
+          return; // Exit the function early
+        }
+        
+        // Only attempt to get location and fingerprint if we don't have originalUrl
+        let locationData = {};
+        let visitorId = "unknown";
+        
+        // Try to get location data
+        try {
+          const locationResponse = await fetch("https://ipapi.co/json/", {
+            signal: AbortSignal.timeout(1000)
+          });
+          if (locationResponse.ok) {
+            locationData = await locationResponse.json();
+          }
+        } catch (locationError) {
+          console.log("Location fetch failed");
+        }
+        
+        // Try fingerprinting if available
+        try {
+          const fpJSModule = await import("https://fpjscdn.net/v3/eGhj85oLHfdY0b0SHhzC");
+          const fp = await fpJSModule.load();
+          const result = await fp.get();
+          visitorId = result.visitorId;
+        } catch (fpError) {
+          console.log("Fingerprint error");
+          // Use a simple random ID if fingerprinting fails
+          visitorId = 'visitor_' + Math.random().toString(36).substring(2, 15);
+        }
+        
+        // Send tracking data
+        if (shortId) {
+          try {
+            const trackingResponse = await fetch(
+              "https://pickandpartner-94sz.onrender.com/store-visitor-id",
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  visitorId,
+                  shortId,
+                  city: locationData.city || "unknown"
+                }),
+                signal: AbortSignal.timeout(1000)
+              }
+            );
+            
+            if (trackingResponse.ok) {
+              const data = await trackingResponse.json();
+              if (data.originalUrl) {
+                // Clear the timeout
+                clearTimeout(immediateFallbackTimer);
+                // Redirect now
+                window.location.href = data.originalUrl;
+                return;
+              }
+            }
+          } catch (trackingError) {
+            console.log("Tracking error");
+          }
+        }
+        
+        // If we're still here and have the originalUrl, redirect
+        if (originalUrl) {
+          clearTimeout(immediateFallbackTimer);
+          window.location.href = originalUrl;
+        }
+        
+      } catch (error) {
+        console.error("General error:", error);
+        
+        // Final fallback - if we have originalUrl, use it
+        if (originalUrl) {
+          clearTimeout(immediateFallbackTimer);
+          window.location.href = originalUrl;
+        }
+      }
+    }
+    
+    // Start the tracking and redirection process
+    trackAndRedirect();
+  </script>
+</body>
 </html>
