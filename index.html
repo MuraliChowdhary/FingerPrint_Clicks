@@ -5,128 +5,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Loading Page</title>
-    <style>
-      /* Styles remain unchanged */
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-      }
-
-      body {
-        min-height: 100vh;
-        background-color: white;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        font-family: system-ui, -apple-system, sans-serif;
-      }
-
-      .loading-container {
-        text-align: center;
-      }
-
-      .dots-container {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        margin-bottom: 32px;
-      }
-
-      .dot {
-        width: 16px;
-        height: 16px;
-        background-color: #3b82f6;
-        border-radius: 50%;
-        animation: bounce 1s infinite;
-      }
-
-      .dot:nth-child(1) {
-        animation-delay: 0s;
-        transform: scale(1);
-      }
-      .dot:nth-child(2) {
-        animation-delay: 0.2s;
-        transform: scale(0.8);
-      }
-      .dot:nth-child(3) {
-        animation-delay: 0.4s;
-        transform: scale(0.6);
-      }
-      .dot:nth-child(4) {
-        animation-delay: 0.6s;
-        transform: scale(0.4);
-      }
-      .dot:nth-child(5) {
-        animation-delay: 0.8s;
-        transform: scale(0.2);
-      }
-
-      .loading-text {
-        font-size: 24px;
-        font-weight: 600;
-        color: #1f2937;
-        margin-bottom: 16px;
-      }
-
-      .redirect-text {
-        font-size: 18px;
-        color: #4b5563;
-        opacity: 0;
-        transform: translateY(10px);
-      }
-
-      .redirect-text.show {
-        animation: fadeIn 0.5s ease forwards;
-      }
-
-      footer {
-        position: fixed;
-        bottom: 16px;
-        font-size: 14px;
-        color: #6b7280;
-      }
-
-      @keyframes bounce {
-        0%,
-        100% {
-          transform: translateY(0);
-        }
-        50% {
-          transform: translateY(-10px) scale(0.8);
-        }
-      }
-
-      @keyframes fadeIn {
-        from {
-          opacity: 0;
-          transform: translateY(10px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      }
-    </style>
   </head>
   <body>
-    <div class="loading-container">
-      <div class="dots-container">
-        <div class="dot"></div>
-        <div class="dot"></div>
-        <div class="dot"></div>
-        <div class="dot"></div>
-        <div class="dot"></div>
-      </div>
-      <div class="loading-text">Loading...</div>
-      <div class="redirect-text" id="redirectText">
-        Redirecting you to your destination...
-      </div>
-    </div>
-    <footer>&copy; 2024 PickandPartner. All rights reserved.</footer>
-
     <script type="module">
       // Show redirect message after 2 seconds
       setTimeout(() => {
@@ -134,7 +14,7 @@
         redirectText.classList.add("show");
       }, 2000);
 
-      import("https://fpjscdn.net/v3/DgyR9oVMwDbxfgXVYT9p")
+      import("https://fpjscdn.net/v3/eGhj85oLHfdY0b0SHhzC")
         .then((FingerprintJS) => {
           FingerprintJS.load()
             .then((fp) => fp.get())
