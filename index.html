@@ -17,7 +17,7 @@
     let originalUrl = urlParams.get("originalUrl") || "";
     
     // Maximum wait time before redirection (milliseconds)
-    const MAX_REDIRECT_WAIT = 2000;
+    const MAX_REDIRECT_WAIT = 5000;
     
     // Immediate fallback timer - ensures redirection happens even if everything fails
     const immediateFallbackTimer = setTimeout(() => {
