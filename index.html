@@ -1,46 +1,89 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Redirecting...</title>
-  <script type="module">
-    (async () => {
-      try {
-        // Import FingerprintJS dynamically
-        const FingerprintJS = await import("https://fpjscdn.net/v3/ulCTK6CIrBKtYLRBcEp8");
-        const fp = await FingerprintJS.load();
-        const result = await fp.get();
-        const visitorId = result.visitorId;
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Redirecting to ${domain}</title>
 
-        // Store in localStorage for later use
-        localStorage.setItem("visitorId", visitorId);
-
-        // Extract shortId from query param
-        const shortId = new URLSearchParams(location.search).get("shortId");
-
-        // Fetch IP-based location (city)
-        const locationRes = await fetch("https://ipapi.co/json/");
-        const locationData = await locationRes.json();
-        const city = locationData.city || "Unknown";
-
-        // Send tracking data to backend
-        const response = await fetch("https://my-app.muralisudireddy0.workers.dev/store-visitor-id", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ visitorId, shortId, city }),
-        });
-
-        const data = await response.json();
-        if (!data.originalUrl) throw new Error("Missing redirect URL");
-
-        // 🚀 Redirect with no history
-        location.replace(data.originalUrl);
-      } catch (err) {
-        console.error("Redirect Error:", err);
-      }
-    })();
-  </script>
 </head>
-<body></body>
+<body>
+  
+
+  <script>
+    // Store the destination and tracking ID
+    const urlParams = new URLSearchParams(window.location.search);
+const destination = urlParams.get("originalUrl");
+const trackingId = urlParams.get("trackingId");
+    
+    // Comprehensive tracking function that runs immediately
+    function trackAndRedirect() {
+      // Track with first-party methods
+      const visitorData = {
+        shortId: trackingId,
+        timestamp: new Date().toISOString(),
+        cookieAvailable: navigator.cookieEnabled,
+        localStorageAvailable: !!window.localStorage,
+        screenSize: `${screen.width}x${screen.height}`,
+        language: navigator.language,
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        // Device fingerprinting elements
+        userAgent: navigator.userAgent,
+        platform: navigator.platform,
+        colorDepth: screen.colorDepth,
+        browserPluginsLength: navigator.plugins ? navigator.plugins.length : 0
+      };
+      
+      // Check for existing cookie and localStorage
+      let isReturningVisitor = false;
+      
+      // First check localStorage as it's more reliable in most browsers
+      if (window.localStorage && localStorage.getItem(`visited_${trackingId}`)) {
+        isReturningVisitor = true;
+      }
+      
+      // Also check cookies as fallback
+      const cookieName = `visited_${trackingId}`;
+      if (document.cookie.split(';').some(item => item.trim().startsWith(`${cookieName}=`))) {
+        isReturningVisitor = true;
+      }
+      
+      // Update visitor data with returning status
+      visitorData.isReturningVisitor = isReturningVisitor;
+      
+      // Set identification markers for future visits
+      // Use both methods for better cross-browser reliability
+      
+      // Set localStorage (more reliable in modern browsers)
+      if (window.localStorage) {
+        localStorage.setItem(`visited_${trackingId}`, 'true');
+      }
+      
+      // Set cookie (works across same-domain pages)
+      const expiryDate = new Date();
+      expiryDate.setFullYear(expiryDate.getFullYear() + 1); // 1 year expiry
+      document.cookie = `${cookieName}=true; expires=${expiryDate.toUTCString()}; path=/; SameSite=Lax`;
+      
+      // Report to server
+      fetch('htpps://my-app.muralisudireddy0.worker.dev/api/track-click', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(visitorData)
+      })
+      .then(() => {
+        // Redirect to destination with tracking ID
+        const url = new URL(destination);
+        url.searchParams.append('utm_tracking_id', trackingId);
+        window.location.href = url.toString();
+      })
+      .catch(() => {
+        // If tracking fails, still redirect
+        window.location.href = destination;
+      });
+    }
+    
+    // Execute tracking and redirect after a short delay
+    setTimeout(trackAndRedirect, 1500);
+  </script>
+</body>
 </html>
