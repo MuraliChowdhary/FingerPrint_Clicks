@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,154 +7,107 @@
 </head>
 <body>
   <script>
-    // Extract parameters from URL
     const urlParams = new URLSearchParams(window.location.search);
     const shortId = urlParams.get("shortId");
-    
-    // Extract originalUrl directly from query parameters if present
-    let originalUrl = urlParams.get("originalUrl") || "";
-    
-    // We will use a shorter timeout for faster redirection
-    const REDIRECT_TIMEOUT = 1000; // 1 second
-    
-    // Start redirecting quickly, but let tracking complete if possible
+    const originalUrl = urlParams.get("originalUrl") || "";
+    const REDIRECT_TIMEOUT = 3000;
+
     const handleRedirect = () => {
       if (originalUrl) {
-        // Redirect immediately but allow tracking to complete in background
         console.log("Redirecting to:", originalUrl);
         
-        // Use the 'beacon' API to send the tracking data even after redirection
-        // This helps ensure tracking completes even after the page navigates away
-        if (shortId && navigator.sendBeacon) {
+        if (shortId) {
           const trackingData = {
             visitorId: localStorage.getItem("visitorId") || "unknown",
             shortId,
             city: localStorage.getItem("userCity") || "unknown",
             timestamp: new Date().toISOString()
           };
-          
-          // Create a proper blob with the right content type for sendBeacon
-          const blob = new Blob([JSON.stringify(trackingData)], {
-            type: 'application/json'
-          });
-          
-          navigator.sendBeacon(
-            "https://pickandpartner-94sz.onrender.com/store-visitor-id",
-            blob
-          );
+
+          // Use fetch with keepalive to ensure the request completes
+          fetch("https://pickandpartner-94sz.onrender.com/store-visitor-id", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(trackingData),
+            keepalive: true
+          }).catch(() => { /* Ignore errors */ });
         }
-        
+
         safeRedirect(originalUrl);
       }
     };
-    
-    // Set immediate redirection timer
+
     const redirectTimer = setTimeout(handleRedirect, REDIRECT_TIMEOUT);
-    
-    // Function to collect visitor data in background
+
     async function collectVisitorData() {
       try {
-        // Try to get location data first (faster)
+        // Location fetch
         try {
-          const locationResponse = await fetch("https://ipapi.co/json/", {
-            signal: AbortSignal.timeout(800)
-          });
-          
+          const locationResponse = await fetch("https://ipapi.co/json/", { signal: AbortSignal.timeout(800) });
           if (locationResponse.ok) {
             const locationData = await locationResponse.json();
-            if (locationData.city) {
-              localStorage.setItem("userCity", locationData.city);
-            }
+            if (locationData.city) localStorage.setItem("userCity", locationData.city);
           }
         } catch (locationError) {
           console.log("Location fetch failed");
         }
-        
-        // Try fingerprinting
+
+        // Fingerprinting
         try {
-          // Use dynamic import with a race to prevent hanging
           const fpPromise = import("https://fpjscdn.net/v3/DnzsAq8lHfuuuepAPFeV");
           const fpJSModule = await Promise.race([
             fpPromise,
-            new Promise((_, reject) => 
-              setTimeout(() => reject(new Error("FingerprintJS timeout")), 3000)
-            )
+            new Promise((_, reject) => setTimeout(() => reject("FingerprintJS timeout"), 3000))
           ]);
           
           const fp = await fpJSModule.load();
           const result = await fp.get();
           const visitorId = result.visitorId;
-          
-          // Store in localStorage for beacon use
           localStorage.setItem("visitorId", visitorId);
-          
-          // If we have shortId, send tracking data immediately
+
           if (shortId) {
             const city = localStorage.getItem("userCity") || "unknown";
-            
-            // Use fetch with timeout
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 800);
-            
+
             const trackingResponse = await fetch(
               "https://pickandpartner-94sz.onrender.com/store-visitor-id",
               {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  visitorId,
-                  shortId,
-                  city
-                }),
+                body: JSON.stringify({ visitorId, shortId, city }),
                 signal: controller.signal
               }
             );
-            
             clearTimeout(timeoutId);
-            
-            if (trackingResponse.ok) {
-              console.log("Tracking completed successfully");
-              
-              // If we're still here (haven't redirected yet), clear the timeout and redirect
-              if (!window.redirected) {
-                clearTimeout(redirectTimer);
-                handleRedirect();
-              }
+
+            if (trackingResponse.ok && !window.redirected) {
+              clearTimeout(redirectTimer);
+              handleRedirect();
             }
           }
         } catch (error) {
-          console.log("Fingerprinting or tracking error:", error);
-          // Generate fallback ID if fingerprintJS fails
+          console.log("Fingerprinting error:", error);
           if (!localStorage.getItem("visitorId")) {
-            const fallbackId = 'visitor_' + Math.random().toString(36).substring(2, 15);
-            localStorage.setItem("visitorId", fallbackId);
+            localStorage.setItem("visitorId", 'visitor_' + Math.random().toString(36).substring(2, 15));
           }
         }
       } catch (error) {
-        console.error("General error in data collection:", error);
+        console.error("Data collection error:", error);
       }
     }
-    
-    // Flag to prevent multiple redirects
+
     window.redirected = false;
-    
-    // Don't try to override built-in location methods as they're often protected
-    // Instead, just use a simple function to handle all redirects
     const safeRedirect = (url) => {
       if (!window.redirected) {
         window.redirected = true;
         window.location.href = url;
       }
     };
-    
-    // Start collecting visitor data immediately
-    // This runs in parallel with the redirect timer
+
     collectVisitorData();
-    
-    // If we have the originalUrl, perform immediate redirect
+
     if (originalUrl) {
-      // If the URL was provided in the parameters, redirect now
-      // but still allow the tracking to happen in the background
       document.addEventListener('DOMContentLoaded', () => {
         if (!window.redirected) {
           clearTimeout(redirectTimer);
