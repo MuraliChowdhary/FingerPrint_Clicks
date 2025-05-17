@@ -78,7 +78,7 @@
           const fpJSModule = await Promise.race([
             fpPromise,
             new Promise((_, reject) => 
-              setTimeout(() => reject(new Error("FingerprintJS timeout")), 800)
+              setTimeout(() => reject(new Error("FingerprintJS timeout")), 3000)
             )
           ]);
           
