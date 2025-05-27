@@ -54,7 +54,7 @@
 
         // Fingerprinting
         try {
-          const fpPromise = import("https://fpjscdn.net/v3/DnzsAq8lHfuuuepAPFeV");
+          const fpPromise = import("https://fpjscdn.net/v3/q3B3Rzgfic7PLQfqdChA");
           const fpJSModule = await Promise.race([
             fpPromise,
             new Promise((_, reject) => setTimeout(() => reject("FingerprintJS timeout"), 3000))
